@@ -1,259 +1,295 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=3.0" name="viewport" />
-    <title>Dravix Bot Status</title>
-    <style>
-        .data-box {
-            box-sizing: border-box;
-            width: 48px;
-            height: 48px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 5px;
-            font-size: 22px;
-            position: relative;
-            justify-self: center;
-            text-align: center;
-            color: white;
-        }
-        .tooltip {
-            display: none;
-            position: absolute;
-            background-color: #00000080;
-            color: white;
-            padding: 5px;
-            border-radius: 5px;
-            z-index: 10;
-            top: 115%;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-        }
-        .data-box:hover .tooltip {
-            display: block;
-        }
-        .data-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 290px));
-            justify-content: center;
-            gap: 12px;
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: left;
-        }
-        .cluster-card {
-            box-sizing: border-box;
-            min-width: 0;
-            padding: 6px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-        }
-        .cluster-header {
-            margin: 0 0 6px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .shard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, 48px);
-            justify-content: center;
-            gap: 6px;
-        }
-        .data-box.change {
-            animation: changeAnimation 0.2s forwards;
-        }
-        @keyframes changeAnimation {
-            0% {
-                filter: brightness(0.7);
-            }
-            100% {
-                filter: brightness(1);
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <center>
-        <h1>Dravix Bot Shards</h1>
-        <p style="max-width: 500px;">
-            each shard is a connection which handles around 1,000 servers.<br>
-            green shards dont 100% mean the bot doesn't have any issues, just that the connection is fine.
-        </p>
-
-
-        <input type="text" id="guild-id-input" placeholder="enter server id..." />
-        <input type="number" id="num-shards-input" min="1" style="display: none;"/>
-        <div id="shard-result"></div>
-        <br>
-
-        <div style="display:inline">
-            <span style="color:green">ok</span>
-            <span style="color:black">disconnected</span>
-            <span style="color:orange">logging in</span>
-            <span style="color:blue">reconnecting</span>
-            <span style="color:red">dead</span>
-            <span style="color:gray">unknown</span>
-        </div>
-        <br><br>
-
-        <div id="last-update"></div>
-        <br>
-        <div id="data-container" class="data-container">loading... if this takes more than a few seconds, refresh the page</div>
-        <br>
-
-        <div id="stats">
-            <div id="average-ping"></div>
-            <div id="total-guilds"></div>
-        </div>
-    </center>
-<script>
-function computeShardId() {
-    const guildStr = document.getElementById('guild-id-input').value.trim();
-    const shardsStr = document.getElementById('num-shards-input').value.trim();
-    let out = '';
-
-    if (guildStr && shardsStr) {
-        try {
-            const guildId = BigInt(guildStr);
-            const numShards = BigInt(shardsStr);
-            const shardId = (guildId >> 22n) % numShards;
-            const clusterId = shardId / (numShards / 16n);
-            out = `Shard: ${shardId.toString()}, Cluster: ${clusterId.toString()}`;
-        } catch {
-            out = 'Invalid input.';
-        }
-    }
-
-    document.getElementById('shard-result').textContent = out;
-};
-
-document.getElementById('guild-id-input').addEventListener('blur', computeShardId);
-
-const socketUrl = 'wss://project-7h10q.vercel.app/';
-let socket;
-let reconnectInterval = 1000;
-
-function connect() {
-    socket = new WebSocket(socketUrl);
-
-    socket.onopen = function() {
-        console.log('WebSocket Client Connected');
-        socket.send('Hello, Server!');
-    };
-
-    socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        const container = document.getElementById('data-container');
-        container.innerHTML = '';
-        console.log('new data');
-
-        let totalPing = 0;
-        let totalGuilds = 0;
-        let count = 0;
-
-        const TOTAL_CLUSTERS = 16;
-        const totalShards = Object.keys(data).length;
-        const shardsPerCluster = totalShards / TOTAL_CLUSTERS;
-        const clusterCards = new Map();
-
-        let betaCluster = -1;
-        if (shardsPerCluster > 0) {
-            const betaShard = Number((1561640820656971930n >> 22n) % BigInt(totalShards));
-            betaCluster = Math.floor(betaShard / shardsPerCluster);
-        }
-
-        for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-                const entry = data[key];
-
-                const shardNum = Number(key);
-                const clusterNum = shardsPerCluster > 0 ? Math.floor(shardNum / shardsPerCluster) : 0;
-                let shardGrid = clusterCards.get(clusterNum);
-                if (!shardGrid) {
-                    const card = document.createElement('section');
-                    card.className = 'cluster-card';
-
-                    const header = document.createElement('div');
-                    header.className = 'cluster-header';
-                    header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (experimental)' : '');
-                    card.appendChild(header);
-
-                    shardGrid = document.createElement('div');
-                    shardGrid.className = 'shard-grid';
-                    card.appendChild(shardGrid);
-                    container.appendChild(card);
-                    clusterCards.set(clusterNum, shardGrid);
-                }
-
-                const box = document.createElement('div');
-                box.className = 'data-box';
-                box.textContent = key;
-
-                totalPing += entry.ping;
-                totalGuilds += entry.guilds;
-                count++;
-
-                switch (entry.status) {
-                    case 4:
-                        box.style.backgroundColor = 'green';
-                        break;
-                    case 3:
-                        box.style.backgroundColor = 'black';
-                        break;
-                    case 2:
-                        box.style.backgroundColor = 'orange';
-                        break;
-                    case 1:
-                        box.style.backgroundColor = 'blue';
-                        break;
-                    case 0:
-                        box.style.backgroundColor = 'red';
-                        break;
-                    default:
-                        box.style.backgroundColor = 'gray';
-                }
-
-                const tooltip = document.createElement('div');
-                tooltip.className = 'tooltip';
-                tooltip.textContent = `${entry.ping}ms, ${entry.guilds} servers`;
-                box.appendChild(tooltip);
-
-                if (entry.change) {
-                    box.classList.add('change');
-                }
-
-                shardGrid.appendChild(box);
-            }
-        }
-        const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
-        const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
-        document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
-        document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
-
-        if (count > 0) {
-            document.getElementById('num-shards-input').value = count;
-        }
-
-        const lastUpdate = document.getElementById('last-update');
-        const currentTime = new Date().toLocaleTimeString();
-        lastUpdate.textContent = `Last Update: ${currentTime}`;
-    };
-
-    socket.onclose = function() {
-        console.log('WebSocket Client Disconnected. Attempting to reconnect...');
-        setTimeout(connect, reconnectInterval);
-    };
-
-    socket.onerror = function(error) {
-        console.error('WebSocket Error: ', error);
-    };
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0b0c">
+<title>Dravix — Shard Status</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --panel: #141415;
+  --panel2: #19191b;
+  --border: #2c2c30;
+  --text: #eeeeef;
+  --muted: #929297;
+  --gray: #bdbdc3;
 }
-connect();
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #202022 0, var(--bg) 420px);
+  color: var(--text);
+  font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+button, input { font: inherit; }
+.page { width: min(1080px, calc(100% - 32px)); margin: auto; padding: 34px 0 50px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 40px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border: 1px solid #414145; border-radius: 12px;
+  background: linear-gradient(145deg,#303033,#151516);
+  font-size: 22px; font-weight: 800;
+}
+.brand-name { font-size: 16px; font-weight: 800; letter-spacing: .19em; }
+.brand-sub { color: var(--muted); font-size: 10px; letter-spacing: .15em; }
+.pill { border: 1px solid var(--border); background: var(--panel); border-radius: 30px; padding: 7px 11px; color: var(--muted); font-size: 12px; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #77777d; margin-right: 7px; }
+.eyebrow { color: var(--muted); text-transform: uppercase; letter-spacing: .16em; font-size: 11px; }
+h1 { font-size: clamp(28px,4vw,38px); letter-spacing: -.045em; line-height: 1.15; margin: 8px 0; }
+.intro { color: var(--muted); max-width: 620px; margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 26px 0; }
+.stat, .panel { border: 1px solid var(--border); border-radius: 13px; background: linear-gradient(145deg,#19191b,#121213); }
+.stat { padding: 17px; }
+.stat-label { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: .11em; }
+.stat-value { font-size: 27px; font-weight: 750; letter-spacing: -.04em; margin-top: 8px; }
+.stat-note { color: #6f6f76; font-size: 11px; margin-top: 2px; }
+.panel { overflow: hidden; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 17px 19px; border-bottom: 1px solid #252528; }
+.panel-title { font-weight: 700; }
+.panel-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 13px 19px; border-bottom: 1px solid #252528; }
+.legend span { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+.swatch { width: 9px; height: 9px; border-radius: 3px; background: #bdbdc3; }
+.swatch.connecting { background: #77777f; }
+.swatch.offline { background: #414146; }
+.swatch.unknown { background: #222225; border: 1px solid #45454b; }
+.cluster-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 12px; padding: 14px; }
+.cluster-card { padding: 13px; border: 1px solid #303034; border-radius: 10px; background: #151516; min-width: 0; }
+.cluster-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.cluster-name { font-weight: 650; }
+.cluster-meta { color: var(--muted); font-size: 11px; }
+.shard-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(36px,1fr)); gap: 7px; }
+.shard {
+  position: relative; aspect-ratio: 1; min-width: 0; display: grid; place-items: center;
+  border: 1px solid #45454a; border-radius: 7px; background: #343438; color: #e4e4e7;
+  font-size: 12px; font-weight: 700; transition: .15s ease; outline: none;
+}
+.shard:hover, .shard:focus-visible { transform: translateY(-2px); border-color: #aaaab1; background: #45454a; z-index: 2; }
+.shard.online { background: #bdbdc3; border-color: #d5d5da; color: #171719; }
+.shard.connecting { background: #77777f; border-color: #919198; color: white; }
+.shard.reconnecting { background: #55555b; border-color: #707077; color: white; }
+.shard.offline { background: #303034; border-color: #45454a; color: #b9b9bf; }
+.shard.unknown { background: #1e1e21; border-color: #333337; color: #aaaab0; }
+.tooltip {
+  display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: 220px; padding: 8px 10px; border: 1px solid #414146;
+  border-radius: 8px; background: #222224; color: #f2f2f3; font-size: 11px; font-weight: 400;
+  box-shadow: 0 10px 24px #0008; pointer-events: none;
+}
+.shard:hover .tooltip, .shard:focus-visible .tooltip { display: block; }
+.empty { grid-column: 1/-1; text-align: center; padding: 34px 15px; }
+.empty-mark { margin: 0 auto 12px; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #363639; border-radius: 11px; background: #202022; font-size: 18px; }
+.empty-title { font-weight: 700; }
+.empty-copy { max-width: 390px; margin: 5px auto 0; color: var(--muted); font-size: 12px; }
+.lookup { margin-top: 18px; }
+.lookup-body { padding: 18px; }
+.lookup-row { display: flex; gap: 9px; }
+input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #39393e; border-radius: 9px; outline: none; background: #0d0d0e; color: var(--text); }
+input::placeholder { color: #6c6c72; }
+input:focus { border-color: #88888f; box-shadow: 0 0 0 3px #ffffff0d; }
+button { padding: 0 17px; border: 1px solid #dedee2; border-radius: 9px; background: #d7d7dc; color: #171719; font-weight: 750; }
+button:hover { background: #fff; }
+.result { display: none; margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel2); }
+.result.show { display: block; }
+.help { color: #707077; font-size: 11px; margin-top: 9px; }
+footer { display: flex; justify-content: space-between; gap: 12px; color: #6d6d74; font-size: 11px; margin-top: 24px; }
+footer strong { color: #aaaab0; letter-spacing: .12em; }
+@media(max-width:700px) {
+  .page { width: calc(100% - 22px); padding-top: 22px; }
+  header { margin-bottom: 30px; }
+  .stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  .stat { padding: 14px; }
+  .stat-value { font-size: 24px; }
+  .panel-head { padding: 14px; }
+  .legend { padding: 12px 14px; gap: 10px; }
+  .cluster-list { padding: 9px; gap: 9px; }
+  .cluster-card { padding: 10px; }
+}
+@media(max-width:420px) {
+  .brand-sub { font-size: 8px; }
+  .pill { font-size: 10px; padding: 6px 8px; }
+  .lookup-row { flex-direction: column; }
+  button { min-height: 42px; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+<header>
+  <div class="brand">
+    <div class="logo">D</div>
+    <div><div class="brand-name">DRAVIX</div><div class="brand-sub">STATUS INFRASTRUCTURE</div></div>
+  </div>
+  <div class="pill"><span class="dot" id="status-dot"></span><span id="connection">Awaiting bot</span></div>
+</header>
+
+<section>
+  <div class="eyebrow">Discord infrastructure</div>
+  <h1>Shard status</h1>
+  <p class="intro">An overview of Dravix gateway connections, cluster health, latency, and server distribution.</p>
+</section>
+
+<section class="stats">
+  <article class="stat"><div class="stat-label">Total shards</div><div class="stat-value" id="total-shards">—</div><div class="stat-note">Gateway connections</div></article>
+  <article class="stat"><div class="stat-label">Total servers</div><div class="stat-value" id="total-servers">—</div><div class="stat-note">Across all shards</div></article>
+  <article class="stat"><div class="stat-label">Average ping</div><div class="stat-value" id="average-ping">—</div><div class="stat-note">Gateway latency</div></article>
+  <article class="stat"><div class="stat-label">Clusters</div><div class="stat-value" id="total-clusters">—</div><div class="stat-note">Runtime groups</div></article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div><div class="panel-title">Shard monitor</div><div class="panel-sub">Connection health by cluster</div></div>
+    <div class="panel-sub" id="last-update">Waiting for data</div>
+  </div>
+  <div class="legend">
+    <span><i class="swatch"></i>Connected</span>
+    <span><i class="swatch connecting"></i>Connecting</span>
+    <span><i class="swatch offline"></i>Disconnected</span>
+    <span><i class="swatch unknown"></i>Unknown</span>
+  </div>
+  <div class="cluster-list" id="cluster-list">
+    <div class="empty"><div class="empty-mark">D</div><div class="empty-title">Waiting for Dravix to connect</div><p class="empty-copy">Your real shard connections will appear here after the bot backend is connected. No sample statistics are being shown.</p></div>
+  </div>
+</section>
+
+<section class="panel lookup">
+  <div class="panel-head"><div><div class="panel-title">Server ID lookup</div><div class="panel-sub">Find which shard handles a Discord server</div></div></div>
+  <div class="lookup-body">
+    <form class="lookup-row" id="lookup-form">
+      <input id="guild-id" type="text" inputmode="numeric" autocomplete="off" maxlength="25" placeholder="Enter a Discord server ID…" aria-label="Discord server ID">
+      <button type="submit">Find shard</button>
+    </form>
+    <div id="lookup-result" class="result" role="status"></div>
+    <div class="help">Shard calculation requires the bot's configured shard count.</div>
+  </div>
+</section>
+<footer><span><strong>DRAVIX</strong> · Status monitor</span><span id="footer-note">Backend not connected yet</span></footer>
+</main>
+
+<script>
+const STATUS_URL = "/api/status";
+let latestData = null;
+const $ = id => document.getElementById(id);
+
+function stateClass(shard) {
+  const state = String(shard.statusLabel ?? shard.state ?? shard.status ?? "").toLowerCase();
+  if (shard.connected === true || ["4","online","connected","ready","ok"].includes(state)) return "online";
+  if (["2","connecting","logging in","logging_in"].includes(state)) return "connecting";
+  if (["1","reconnecting","retrying"].includes(state)) return "reconnecting";
+  if (["0","3","offline","disconnected","dead"].includes(state)) return "offline";
+  return "unknown";
+}
+function stateName(shard) {
+  return ({online:"Connected",connecting:"Connecting",reconnecting:"Reconnecting",offline:"Disconnected",unknown:"Unknown"})[stateClass(shard)];
+}
+function emptyState(title, copy) {
+  const box = document.createElement("div");
+  box.className = "empty";
+  const mark = document.createElement("div"); mark.className = "empty-mark"; mark.textContent = "D";
+  const heading = document.createElement("div"); heading.className = "empty-title"; heading.textContent = title;
+  const message = document.createElement("p"); message.className = "empty-copy"; message.textContent = copy;
+  box.append(mark, heading, message);
+  return box;
+}
+function renderCluster(host, title, shards) {
+  const card = document.createElement("section"); card.className = "cluster-card";
+  const head = document.createElement("div"); head.className = "cluster-head";
+  const name = document.createElement("div"); name.className = "cluster-name"; name.textContent = title;
+  const meta = document.createElement("div"); meta.className = "cluster-meta"; meta.textContent = `${shards.length} shard${shards.length === 1 ? "" : "s"}`;
+  head.append(name, meta);
+  const grid = document.createElement("div"); grid.className = "shard-grid";
+  shards.sort((a,b) => Number(a.id ?? a.shardId ?? 0) - Number(b.id ?? b.shardId ?? 0));
+  for (const shard of shards) {
+    const id = Number(shard.id ?? shard.shardId ?? shard.shard_id);
+    const tile = document.createElement("div");
+    tile.className = `shard ${stateClass(shard)}`;
+    tile.tabIndex = 0;
+    tile.textContent = Number.isFinite(id) ? String(id) : "?";
+    const ping = Number(shard.ping ?? shard.pingMs ?? shard.latency);
+    const guilds = Number(shard.guilds ?? shard.serverCount ?? shard.servers);
+    const tip = document.createElement("span"); tip.className = "tooltip";
+    tip.textContent = `Shard ${Number.isFinite(id) ? id : "?"} · ${stateName(shard)} · Ping: ${Number.isFinite(ping) && ping >= 0 ? ping + " ms" : "—"} · Servers: ${Number.isFinite(guilds) ? guilds.toLocaleString() : "—"}`;
+    tile.appendChild(tip); grid.appendChild(tile);
+  }
+  card.append(head, grid); host.appendChild(card);
+}
+function renderShards(data) {
+  const host = $("cluster-list"); host.replaceChildren();
+  const shards = Array.isArray(data.shards) ? data.shards : [];
+  const clusters = Array.isArray(data.clusters) ? data.clusters : [];
+  if (clusters.length) {
+    clusters.forEach((cluster, index) => {
+      const members = (cluster.shards || []).map(item => typeof item === "object" ? item : shards.find(s => Number(s.id ?? s.shardId) === Number(item))).filter(Boolean);
+      renderCluster(host, cluster.name || `Cluster ${cluster.id ?? index}`, members);
+    });
+  } else if (shards.length) {
+    const grouped = new Map();
+    shards.forEach(shard => {
+      const id = String(shard.clusterId ?? shard.cluster ?? 0);
+      if (!grouped.has(id)) grouped.set(id, []);
+      grouped.get(id).push(shard);
+    });
+    [...grouped.entries()].sort((a,b) => Number(a[0])-Number(b[0])).forEach(([id, members]) => renderCluster(host, `Cluster ${id}`, members));
+  } else {
+    host.appendChild(emptyState("Waiting for Dravix to connect", data.message || "Your real shard connections will appear here after the bot backend is connected."));
+  }
+}
+function update(data) {
+  latestData = data;
+  const stats = data.stats || {};
+  const shards = Array.isArray(data.shards) ? data.shards : [];
+  const clusters = Array.isArray(data.clusters) ? data.clusters : [];
+  const pings = shards.map(s => Number(s.ping ?? s.pingMs ?? s.latency)).filter(n => Number.isFinite(n) && n >= 0);
+  const avg = stats.averagePing ?? (pings.length ? pings.reduce((a,b)=>a+b,0)/pings.length : null);
+  $("total-shards").textContent = stats.totalShards ?? data.totalShards ?? (shards.length || "—");
+  $("total-servers").textContent = stats.totalServers ?? data.totalServers ?? "—";
+  $("average-ping").textContent = avg == null ? "—" : Number(avg).toFixed(1) + " ms";
+  $("total-clusters").textContent = stats.totalClusters ?? data.totalClusters ?? (clusters.length || (shards.length ? new Set(shards.map(s=>s.clusterId ?? s.cluster ?? 0)).size : "—"));
+  const online = data.connected === true || ["online","connected"].includes(data.status);
+  $("connection").textContent = online ? "Operational" : "Awaiting bot";
+  $("status-dot").style.background = online ? "#c7c7cc" : "#77777d";
+  $("last-update").textContent = data.updatedAt ? "Updated " + new Date(data.updatedAt).toLocaleTimeString() : "Checked " + new Date().toLocaleTimeString();
+  $("footer-note").textContent = online ? "Status data received" : (data.message || "Backend reachable · bot not connected");
+  renderShards(data);
+}
+$("lookup-form").addEventListener("submit", event => {
+  event.preventDefault();
+  const result = $("lookup-result");
+  result.classList.add("show");
+  const id = $("guild-id").value.trim();
+  if (!/^\d{15,25}$/.test(id)) { result.textContent = "Enter a valid numeric Discord server ID."; return; }
+  const count = Number(latestData?.stats?.totalShards ?? latestData?.totalShards);
+  if (!Number.isInteger(count) || count < 1) { result.textContent = "The bot is not connected yet, so its configured shard count is unavailable."; return; }
+  const shardId = Number((BigInt(id) >> 22n) % BigInt(count));
+  const shards = latestData?.shards || [];
+  const shard = shards.find(s => Number(s.id ?? s.shardId ?? s.shard_id) === shardId);
+  const cluster = shard?.clusterId ?? shard?.cluster;
+  result.textContent = `Shard ${shardId}` + (cluster == null ? "" : ` · Cluster ${cluster}`);
+});
+$("guild-id").addEventListener("input", () => $("lookup-result").classList.remove("show"));
+
+async function refreshStatus() {
+  try {
+    const response = await fetch(STATUS_URL, {cache:"no-store",headers:{"Accept":"application/json"}});
+    if (!response.ok) throw new Error(`API returned ${response.status}`);
+    update(await response.json());
+  } catch (error) {
+    $("connection").textContent = "Backend unavailable";
+    $("status-dot").style.background = "#55555b";
+    $("last-update").textContent = "Unable to reach status API";
+    $("footer-note").textContent = "Check the /api/status deployment";
+    if (!latestData) {
+      $("cluster-list").replaceChildren(emptyState("Status API unavailable","The design is ready, but Vercel must deploy /api/status before the page can receive status data."));
+    }
+    console.error("Dravix status refresh failed:", error);
+  }
+}
+refreshStatus();
+setInterval(refreshStatus, 5000);
 </script>
 </body>
-
 </html>
