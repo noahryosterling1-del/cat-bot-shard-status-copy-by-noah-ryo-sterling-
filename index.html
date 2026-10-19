@@ -3,16 +3,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0b0c">
+  <meta name="description" content="Dravix Discord bot shard and cluster status dashboard.">
   <title>Dravix — Shard Status</title>
+
   <style>
     :root {
       color-scheme: dark;
       --bg: #0b0b0c;
       --panel: #121213;
-      --panel-2: #19191b;
-      --border: #303033;
+      --panel2: #19191b;
+      --border: #303034;
       --gold: #d4af37;
       --gold-light: #f0d777;
       --text: #f3f3f3;
@@ -27,76 +29,75 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
       min-height: 100vh;
     }
 
     button, input { font: inherit; }
-
     button { cursor: pointer; }
 
     .container {
       width: min(1200px, calc(100% - 36px));
-      margin: 0 auto;
+      margin: auto;
     }
 
     header {
       border-bottom: 1px solid var(--border);
-      background: rgba(11,11,12,.95);
+      background: #0b0b0cf5;
     }
 
     .nav {
       min-height: 76px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      align-items: center;
+      gap: 18px;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 23px;
-      font-weight: 850;
+      font-weight: 900;
       letter-spacing: 2px;
+      font-size: 23px;
     }
 
     .brand-mark {
-      display: grid;
-      place-items: center;
       width: 39px;
       height: 39px;
-      border-radius: 11px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
       background: var(--gold);
       color: #111;
       font-weight: 950;
-      letter-spacing: 0;
     }
 
     .eyebrow {
       color: var(--gold);
       font-size: 10px;
-      letter-spacing: 2px;
       font-weight: 800;
+      letter-spacing: 2px;
       text-transform: uppercase;
     }
 
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 8px;
+      font-size: 11px;
       color: var(--muted);
-      font-size: 12px;
     }
 
     .dot {
+      display: inline-block;
+      flex-shrink: 0;
       width: 8px;
       height: 8px;
-      display: inline-block;
       border-radius: 50%;
       background: #666;
-      flex-shrink: 0;
     }
 
     .dot.online { background: var(--green); }
@@ -105,49 +106,52 @@
 
     main { padding: 38px 0 60px; }
 
-    .hero { margin-bottom: 27px; }
-
     h1 {
-      margin: 8px 0 9px;
-      font-size: clamp(29px, 4vw, 43px);
+      margin: 9px 0;
+      font-size: clamp(30px, 5vw, 44px);
       letter-spacing: -1.5px;
     }
 
+    h2 {
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: -.4px;
+    }
+
     .subtitle {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
       max-width: 700px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
     }
 
     .stats {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 13px;
-      margin: 26px 0 35px;
+      margin: 27px 0 36px;
     }
 
-    .panel, .stat, .cluster {
-      background: var(--panel);
+    .stat, .panel, .cluster {
       border: 1px solid var(--border);
-      border-radius: 13px;
+      background: var(--panel);
+      border-radius: 12px;
     }
 
     .stat { padding: 19px; }
 
     .stat-label {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 750;
+      font-size: 10px;
       letter-spacing: 1px;
+      font-weight: 750;
+      color: var(--muted);
       text-transform: uppercase;
     }
 
     .stat-value {
       margin-top: 12px;
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: -.7px;
+      font-size: 28px;
+      font-weight: 850;
     }
 
     .stat-note {
@@ -160,36 +164,30 @@
       display: flex;
       justify-content: space-between;
       align-items: end;
-      gap: 16px;
-      margin: 34px 0 16px;
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: -.4px;
+      gap: 15px;
+      margin: 35px 0 16px;
     }
 
     .section-description {
-      margin-top: 6px;
+      margin-top: 7px;
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.6;
+      line-height: 1.7;
     }
 
     .pill {
       display: inline-flex;
       align-items: center;
       gap: 7px;
+      padding: 7px 10px;
       border: 1px solid var(--border);
       border-radius: 100px;
-      padding: 7px 10px;
+      font-size: 10px;
       color: #d2d2d5;
-      font-size: 11px;
       white-space: nowrap;
     }
 
-    .gold-text { color: var(--gold-light); }
+    .gold { color: var(--gold-light); }
 
     .cluster-list {
       display: grid;
@@ -201,19 +199,19 @@
     }
 
     .cluster-header {
+      padding: 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 14px;
-      padding: 18px;
-      background: linear-gradient(105deg, #191816, #121213 70%);
+      background: linear-gradient(110deg, #1d1a11, #121213 75%);
       border-bottom: 1px solid var(--border);
     }
 
     .cluster-title {
       display: flex;
-      align-items: center;
       flex-wrap: wrap;
+      align-items: center;
       gap: 10px;
     }
 
@@ -224,37 +222,38 @@
 
     .cluster-id {
       color: var(--gold);
-      font-size: 11px;
-      font-weight: 800;
+      font-weight: 850;
+      font-size: 10px;
       letter-spacing: 1px;
     }
 
     .cluster-subtitle {
+      margin-top: 7px;
       color: var(--muted);
       font-size: 12px;
-      margin-top: 7px;
+      line-height: 1.7;
     }
 
     .cluster-metrics {
+      padding: 12px 18px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      padding: 13px 18px;
       border-bottom: 1px solid var(--border);
     }
 
     .metric-chip {
-      padding: 8px 10px;
-      background: #19191b;
+      background: var(--panel2);
       border: 1px solid #29292c;
       border-radius: 7px;
+      padding: 8px 10px;
+      color: #bdbdc1;
       font-size: 11px;
-      color: #b7b7bd;
     }
 
     .metric-chip strong {
+      margin-left: 5px;
       color: var(--text);
-      margin-left: 4px;
     }
 
     .shards {
@@ -266,10 +265,10 @@
 
     .shard {
       min-width: 0;
+      padding: 13px;
       border: 1px solid #303034;
       background: #171719;
       border-radius: 9px;
-      padding: 13px;
       transition: border-color .15s, transform .15s;
     }
 
@@ -280,16 +279,19 @@
 
     .shard-top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 8px;
       margin-bottom: 15px;
     }
 
-    .shard-name { font-weight: 800; font-size: 13px; }
+    .shard-name {
+      font-size: 13px;
+      font-weight: 800;
+    }
 
     .shard-status {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 5px;
       font-size: 10px;
@@ -303,9 +305,9 @@
     }
 
     .shard-stat-label {
-      font-size: 10px;
-      color: var(--muted);
       margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 10px;
     }
 
     .shard-stat-value {
@@ -322,9 +324,25 @@
       font-size: 10px;
     }
 
-    .lookup {
-      padding: 22px;
+    .empty {
+      border: 1px dashed #414146;
+      background: #111112;
+      border-radius: 12px;
+      padding: 35px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
     }
+
+    .empty strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      margin-bottom: 7px;
+    }
+
+    .lookup { padding: 22px; }
 
     .lookup-form {
       display: flex;
@@ -335,23 +353,23 @@
     input {
       flex: 1;
       min-width: 0;
+      background: #0d0d0e;
       border: 1px solid #37373b;
       border-radius: 8px;
-      background: #0d0d0e;
-      color: var(--text);
       padding: 12px 14px;
+      color: var(--text);
       outline: none;
     }
 
     input:focus { border-color: var(--gold); }
 
     .btn {
-      background: var(--gold);
-      color: #111;
       border: 1px solid var(--gold);
       border-radius: 8px;
       padding: 11px 17px;
-      font-weight: 800;
+      background: var(--gold);
+      color: #111;
+      font-weight: 850;
       font-size: 12px;
       transition: background .15s;
     }
@@ -359,8 +377,8 @@
     .btn:hover { background: var(--gold-light); }
 
     .btn-secondary {
-      background: #19191b;
       color: var(--text);
+      background: #19191b;
       border-color: #3a3a3d;
     }
 
@@ -373,8 +391,8 @@
       border: 1px solid #5c4b1c;
       background: #19170f;
       border-radius: 9px;
-      line-height: 1.8;
       font-size: 13px;
+      line-height: 1.9;
       overflow-wrap: anywhere;
     }
 
@@ -383,33 +401,21 @@
     .bottom-action {
       display: flex;
       justify-content: center;
-      margin: 27px 0 12px;
+      margin: 27px 0 10px;
     }
 
     .bottom-action .btn {
       min-width: 220px;
       padding: 14px 22px;
-      font-size: 13px;
-    }
-
-    .empty {
-      border: 1px dashed #3a3a3e;
-      background: #111112;
-      border-radius: 9px;
-      padding: 20px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.7;
-      text-align: center;
     }
 
     .footer {
       border-top: 1px solid var(--border);
-      padding: 24px 0;
+      padding: 25px 0;
       color: var(--muted);
       font-size: 11px;
       text-align: center;
-      line-height: 1.8;
+      line-height: 1.9;
     }
 
     .footer strong { color: var(--gold); }
@@ -417,14 +423,15 @@
     @media (max-width: 760px) {
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .shards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .cluster-header { align-items: flex-start; flex-direction: column; }
-      .nav { min-height: 66px; }
-      .nav-right { font-size: 10px; }
+      .cluster-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
     }
 
-    @media (max-width: 420px) {
+    @media (max-width: 430px) {
       .container { width: calc(100% - 22px); }
-      main { padding-top: 27px; }
+      main { padding-top: 26px; }
       .stat { padding: 14px; }
       .stat-value { font-size: 24px; }
       .lookup-form { flex-direction: column; }
@@ -433,6 +440,7 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <div class="container nav">
@@ -442,40 +450,41 @@
       </div>
       <div class="nav-right">
         <span class="dot waiting" id="connectionDot"></span>
-        <span id="connectionLabel">AWAITING CONNECTION</span>
+        <span id="connectionLabel">WAITING FOR BOT</span>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <section class="hero">
+    <section>
       <div class="eyebrow">Infrastructure / Gateway</div>
       <h1>Shard Status</h1>
       <div class="subtitle">
-        Monitor Dravix gateway shards, cluster assignments, latency, and server distribution from one place.
+        Monitor connected Dravix shards, their assigned clusters, gateway latency,
+        and server counts in one place.
       </div>
     </section>
 
     <section class="stats">
       <div class="stat">
-        <div class="stat-label">Total Shards</div>
-        <div class="stat-value" id="totalShards">128</div>
-        <div class="stat-note">Planned configuration</div>
+        <div class="stat-label">Connected Shards</div>
+        <div class="stat-value" id="totalShards">0</div>
+        <div class="stat-note">Reported by status API</div>
       </div>
       <div class="stat">
         <div class="stat-label">Total Servers</div>
         <div class="stat-value" id="totalServers">—</div>
-        <div class="stat-note">Across connected shards</div>
+        <div class="stat-note">Reported server counts</div>
       </div>
       <div class="stat">
         <div class="stat-label">Average Ping</div>
         <div class="stat-value" id="averagePing">—</div>
-        <div class="stat-note">Gateway latency</div>
+        <div class="stat-note">Connected shards only</div>
       </div>
       <div class="stat">
-        <div class="stat-label">Total Clusters</div>
-        <div class="stat-value" id="totalClusters">19</div>
-        <div class="stat-note">7 shards per cluster</div>
+        <div class="stat-label">Active Clusters</div>
+        <div class="stat-value" id="totalClusters">0</div>
+        <div class="stat-note">7 shard IDs per cluster group</div>
       </div>
     </section>
 
@@ -483,16 +492,32 @@
       <div class="section-head">
         <div>
           <h2>Shard Infrastructure</h2>
-          <div class="section-description">Every cluster and its assigned shard IDs.</div>
+          <div class="section-description">
+            Only shard IDs reported by the API are displayed. Clusters are generated
+            automatically from those IDs, with seven shard IDs per cluster.
+          </div>
         </div>
-        <span class="pill"><span class="dot waiting"></span><span id="shardCountLabel">128 planned shards</span></span>
+        <span class="pill">
+          <span class="dot waiting"></span>
+          <span id="shardCountLabel">0 connected shards</span>
+        </span>
       </div>
-      <div id="clusterList" class="cluster-list"></div>
+
+      <div id="clusterList" class="cluster-list">
+        <div class="empty">
+          <strong>No connected shards yet</strong>
+          Your cluster list will appear here when the Dravix status API reports shards.
+          No placeholder shards or fake live statistics are displayed.
+        </div>
+      </div>
+
       <div class="bottom-action">
-        <button class="btn" id="toggleClusters" type="button">Show All Clusters ↓</button>
+        <button class="btn" id="toggleClusters" type="button" hidden>
+          Show All Clusters ↓
+        </button>
       </div>
       <div class="section-description" id="clusterHint" style="text-align:center">
-        Expand to view every cluster and all of its shards.
+        Waiting for shard information.
       </div>
     </section>
 
@@ -500,13 +525,22 @@
       <div class="section-head">
         <div>
           <h2>Server Lookup</h2>
-          <div class="section-description">Find which shard and cluster would handle a Discord server ID.</div>
+          <div class="section-description">
+            Calculate a server's shard and cluster using the configured total shard count.
+          </div>
         </div>
       </div>
+
       <div class="panel lookup">
         <div class="eyebrow">Guild ID Resolver</div>
         <form class="lookup-form" id="lookupForm">
-          <input id="guildId" inputmode="numeric" autocomplete="off" placeholder="Enter a Discord server ID" aria-label="Discord server ID">
+          <input
+            id="guildId"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="Enter a Discord server ID"
+            aria-label="Discord server ID"
+          >
           <button class="btn" type="submit">Find Shard</button>
         </form>
         <div class="lookup-result" id="lookupResult" role="status"></div>
@@ -517,17 +551,14 @@
   <footer class="footer">
     <div class="container">
       <strong>DRAVIX</strong> · Shard Infrastructure<br>
-      Live metrics will appear once the bot status API is connected.
+      Live information is supplied by the connected bot status API.
     </div>
   </footer>
 
   <script>
-    // Planned configuration. Each cluster owns 7 consecutive shard IDs.
-    const PLANNED_SHARDS = 128;
     const SHARDS_PER_CLUSTER = 7;
     const REFRESH_INTERVAL = 5000;
 
-    let actualShardCount = PLANNED_SHARDS;
     let liveData = null;
     let showAllClusters = false;
 
@@ -543,154 +574,188 @@
       })[char]);
     }
 
+    function numberOrNull(value) {
+      if (value === null || value === undefined || value === "") return null;
+      const number = Number(value);
+      return Number.isFinite(number) ? number : null;
+    }
+
     function formatNumber(value) {
-      return Number.isFinite(Number(value))
-        ? Number(value).toLocaleString()
-        : "—";
+      const number = numberOrNull(value);
+      return number === null ? "—" : number.toLocaleString();
     }
 
     function formatPing(value) {
-      return Number.isFinite(Number(value)) && value !== null
-        ? `${Math.round(Number(value))} ms`
-        : "—";
+      const number = numberOrNull(value);
+      return number === null || number < 0 ? "—" : `${Math.round(number)} ms`;
     }
 
-    function shardStatus(shard) {
-      const status = String(shard?.status ?? "").toLowerCase();
-      if (shard?.online === true || status === "online" || status === "ready" || status === "connected" || status === "1") {
-        return { label: "Online", cls: "online" };
-      }
-      if (shard?.online === false || status === "offline" || status === "disconnected" || status === "0") {
-        return { label: "Offline", cls: "offline" };
-      }
-      return { label: "Waiting", cls: "waiting" };
+    function getShardId(shard, fallbackId) {
+      const id = Number(
+        shard.id ?? shard.shardId ?? shard.shard_id ?? fallbackId
+      );
+      return Number.isSafeInteger(id) && id >= 0 ? id : null;
     }
 
     function getShardMap() {
       const map = new Map();
-      const rawShards = liveData?.shards;
+      const source = liveData?.shards;
 
-      if (Array.isArray(rawShards)) {
-        rawShards.forEach((shard) => {
-          const id = Number(shard.id ?? shard.shardId ?? shard.shard_id);
-          if (Number.isInteger(id) && id >= 0) map.set(id, shard);
+      if (Array.isArray(source)) {
+        source.forEach((shard) => {
+          const id = getShardId(shard);
+          if (id !== null) map.set(id, shard);
         });
-      } else if (rawShards && typeof rawShards === "object") {
-        Object.entries(rawShards).forEach(([key, shard]) => {
-          const id = Number(shard?.id ?? shard?.shardId ?? key);
-          if (Number.isInteger(id) && id >= 0) map.set(id, shard);
+      } else if (source && typeof source === "object") {
+        Object.entries(source).forEach(([key, shard]) => {
+          if (!shard || typeof shard !== "object") return;
+          const id = getShardId(shard, key);
+          if (id !== null) map.set(id, shard);
         });
       }
 
       return map;
     }
 
-    function getClusterCount() {
-      return Math.ceil(actualShardCount / SHARDS_PER_CLUSTER);
+    function getStatus(shard) {
+      const status = String(shard?.status ?? "").toLowerCase();
+
+      if (
+        shard?.online === true ||
+        ["online", "ready", "connected", "1"].includes(status)
+      ) {
+        return { label: "Online", css: "online" };
+      }
+
+      if (
+        shard?.online === false ||
+        ["offline", "disconnected", "0"].includes(status)
+      ) {
+        return { label: "Offline", css: "offline" };
+      }
+
+      return { label: "Reported", css: "waiting" };
     }
 
-    function getClusterShardIds(clusterId) {
-      const start = clusterId * SHARDS_PER_CLUSTER;
-      const end = Math.min(start + SHARDS_PER_CLUSTER, actualShardCount);
-      const ids = [];
-      for (let id = start; id < end; id++) ids.push(id);
-      return ids;
+    function getClusters(shardMap) {
+      const clusters = new Map();
+
+      for (const [id, shard] of shardMap.entries()) {
+        const clusterId = Math.floor(id / SHARDS_PER_CLUSTER);
+
+        if (!clusters.has(clusterId)) clusters.set(clusterId, []);
+        clusters.get(clusterId).push({ ...shard, id });
+      }
+
+      return [...clusters.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([id, shards]) => ({
+          id,
+          shards: shards.sort((a, b) => a.id - b.id)
+        }));
     }
 
-    function clusterData(clusterId, ids, shardMap) {
-      const supplied = Array.isArray(liveData?.clusters)
-        ? liveData.clusters.find(c => Number(c.id ?? c.clusterId) === clusterId)
-        : null;
-
-      const shards = ids.map(id => shardMap.get(id)).filter(Boolean);
-      const knownGuilds = shards
-        .map(s => Number(s.servers ?? s.guilds ?? s.serverCount ?? s.guild_count))
-        .filter(Number.isFinite);
-
-      const knownPings = shards
-        .map(s => Number(s.ping ?? s.latency ?? s.latencyMs))
-        .filter(n => Number.isFinite(n) && n >= 0);
-
-      const serverTotal = knownGuilds.length
-        ? knownGuilds.reduce((sum, n) => sum + n, 0)
-        : null;
-
-      const averagePing = knownPings.length
-        ? knownPings.reduce((sum, n) => sum + n, 0) / knownPings.length
-        : null;
-
-      const onlineCount = shards.filter(s => shardStatus(s).cls === "online").length;
-
-      return {
-        serverTotal: supplied?.servers ?? supplied?.totalServers ?? serverTotal,
-        averagePing: supplied?.averagePing ?? averagePing,
-        onlineCount: supplied?.onlineShards ?? onlineCount,
-        knownCount: shards.length
-      };
+    function getGuildCount(shard) {
+      return numberOrNull(
+        shard.servers ?? shard.guilds ?? shard.serverCount ?? shard.guild_count
+      );
     }
 
-    function renderShard(id, shardMap, clusterId) {
-      const shard = shardMap.get(id);
-      const status = shardStatus(shard);
-      const ping = shard?.ping ?? shard?.latency ?? shard?.latencyMs;
-      const servers = shard?.servers ?? shard?.guilds ?? shard?.serverCount ?? shard?.guild_count;
+    function getPing(shard) {
+      return numberOrNull(shard.ping ?? shard.latency ?? shard.latencyMs);
+    }
+
+    function renderShard(shard, clusterId) {
+      const status = getStatus(shard);
+      const ping = getPing(shard);
+      const guilds = getGuildCount(shard);
 
       return `
         <article class="shard">
           <div class="shard-top">
-            <span class="shard-name">Shard ${id}</span>
-            <span class="shard-status"><span class="dot ${status.cls}"></span>${status.label}</span>
+            <span class="shard-name">Shard ${shard.id}</span>
+            <span class="shard-status">
+              <span class="dot ${status.css}"></span>
+              ${status.label}
+            </span>
           </div>
           <div class="shard-stats">
             <div>
               <div class="shard-stat-label">Ping</div>
-              <div class="shard-stat-value">${shard ? escapeHtml(formatPing(ping)) : "—"}</div>
+              <div class="shard-stat-value">${escapeHtml(formatPing(ping))}</div>
             </div>
             <div>
               <div class="shard-stat-label">Servers</div>
-              <div class="shard-stat-value">${shard ? escapeHtml(formatNumber(servers)) : "—"}</div>
+              <div class="shard-stat-value">${escapeHtml(formatNumber(guilds))}</div>
             </div>
           </div>
-          <div class="shard-footer">Cluster ${clusterId} · Shard ID ${id}</div>
+          <div class="shard-footer">
+            Cluster ${clusterId + 1} · Shard ID ${shard.id}
+          </div>
         </article>
       `;
     }
 
-    function renderCluster(clusterId, shardMap) {
-      const ids = getClusterShardIds(clusterId);
-      const info = clusterData(clusterId, ids, shardMap);
-      const online = info.onlineCount;
-      const statusClass = online === ids.length && ids.length > 0
-        ? "online"
-        : (online > 0 ? "waiting" : "waiting");
-      const statusLabel = online > 0 ? `${online}/${ids.length} online` : "Awaiting connection";
+    function getClusterMetrics(shards) {
+      const guildCounts = shards.map(getGuildCount).filter(v => v !== null);
+      const pings = shards
+        .map(getPing)
+        .filter(v => v !== null && v >= 0);
+
+      const onlineCount = shards.filter(
+        shard => getStatus(shard).css === "online"
+      ).length;
+
+      return {
+        guilds: guildCounts.length
+          ? guildCounts.reduce((sum, value) => sum + value, 0)
+          : null,
+        averagePing: pings.length
+          ? pings.reduce((sum, value) => sum + value, 0) / pings.length
+          : null,
+        onlineCount
+      };
+    }
+
+    function renderCluster(cluster) {
+      const { id, shards } = cluster;
+      const metrics = getClusterMetrics(shards);
+      const firstId = Math.floor(id * SHARDS_PER_CLUSTER);
+      const lastId = firstId + SHARDS_PER_CLUSTER - 1;
 
       return `
         <article class="cluster">
           <div class="cluster-header">
             <div>
               <div class="cluster-title">
-                <span class="cluster-id">CLUSTER ${String(clusterId + 1).padStart(2, "0")}</span>
-                <h3>Cluster ${clusterId + 1}</h3>
-                <span class="pill">${ids.length} shard${ids.length === 1 ? "" : "s"}</span>
+                <span class="cluster-id">
+                  CLUSTER ${String(id + 1).padStart(2, "0")}
+                </span>
+                <h3>Cluster ${id + 1}</h3>
+                <span class="pill">${shards.length} reported shard${shards.length === 1 ? "" : "s"}</span>
               </div>
               <div class="cluster-subtitle">
-                Controls shard IDs: <span class="gold-text">${ids.length ? ids[0] : "—"}${ids.length > 1 ? `–${ids[ids.length - 1]}` : ""}</span>
-                · Cluster ID ${clusterId}
+                Assigned shard range:
+                <span class="gold">${firstId}–${lastId}</span>
+                · Reported IDs:
+                <span class="gold">${shards.map(s => s.id).join(", ")}</span>
               </div>
             </div>
-            <span class="pill"><span class="dot ${statusClass}"></span>${statusLabel}</span>
+            <span class="pill">
+              <span class="dot ${metrics.onlineCount ? "online" : "waiting"}"></span>
+              ${metrics.onlineCount} online
+            </span>
           </div>
 
           <div class="cluster-metrics">
-            <span class="metric-chip">Controlled shards<strong>${ids.length}</strong></span>
-            <span class="metric-chip">Online<strong>${online}</strong></span>
-            <span class="metric-chip">Servers<strong>${info.serverTotal == null ? "—" : escapeHtml(formatNumber(info.serverTotal))}</strong></span>
-            <span class="metric-chip">Average ping<strong>${info.averagePing == null ? "—" : escapeHtml(formatPing(info.averagePing))}</strong></span>
+            <span class="metric-chip">Reported shards<strong>${shards.length}</strong></span>
+            <span class="metric-chip">Online<strong>${metrics.onlineCount}</strong></span>
+            <span class="metric-chip">Servers<strong>${escapeHtml(formatNumber(metrics.guilds))}</strong></span>
+            <span class="metric-chip">Average ping<strong>${escapeHtml(formatPing(metrics.averagePing))}</strong></span>
           </div>
 
           <div class="shards">
-            ${ids.map(id => renderShard(id, shardMap, clusterId)).join("")}
+            ${shards.map(shard => renderShard(shard, id)).join("")}
           </div>
         </article>
       `;
@@ -698,49 +763,73 @@
 
     function render() {
       const shardMap = getShardMap();
-      const clusterCount = getClusterCount();
+      const clusters = getClusters(shardMap);
+      const allShards = [...shardMap.values()];
 
-      $("totalShards").textContent = formatNumber(actualShardCount);
-      $("totalClusters").textContent = formatNumber(clusterCount);
+      $("totalShards").textContent = formatNumber(allShards.length);
+      $("totalClusters").textContent = formatNumber(clusters.length);
+      $("shardCountLabel").textContent =
+        `${allShards.length} reported shard${allShards.length === 1 ? "" : "s"}`;
 
-      const allShards = Array.from(shardMap.values());
-      const guildValues = allShards
-        .map(s => Number(s.servers ?? s.guilds ?? s.serverCount ?? s.guild_count))
-        .filter(Number.isFinite);
-      const pingValues = allShards
-        .map(s => Number(s.ping ?? s.latency ?? s.latencyMs))
-        .filter(n => Number.isFinite(n) && n >= 0);
+      const apiTotalServers = numberOrNull(liveData?.stats?.totalServers);
+      const apiAveragePing = numberOrNull(liveData?.stats?.averagePing);
 
-      const totalServers = liveData?.stats?.totalServers ??
-        (guildValues.length ? guildValues.reduce((a, b) => a + b, 0) : null);
-      const avgPing = liveData?.stats?.averagePing ??
-        (pingValues.length ? pingValues.reduce((a, b) => a + b, 0) / pingValues.length : null);
+      const shardGuildCounts = allShards.map(getGuildCount).filter(v => v !== null);
+      const shardPings = allShards
+        .map(getPing)
+        .filter(v => v !== null && v >= 0);
 
-      $("totalServers").textContent = totalServers == null ? "—" : formatNumber(totalServers);
-      $("averagePing").textContent = avgPing == null ? "—" : formatPing(avgPing);
-      $("shardCountLabel").textContent = `${actualShardCount} configured shards`;
+      const totalServers = apiTotalServers !== null
+        ? apiTotalServers
+        : (shardGuildCounts.length
+          ? shardGuildCounts.reduce((sum, n) => sum + n, 0)
+          : null);
 
-      const dot = $("connectionDot");
-      const label = $("connectionLabel");
+      const averagePing = apiAveragePing !== null
+        ? apiAveragePing
+        : (shardPings.length
+          ? shardPings.reduce((sum, n) => sum + n, 0) / shardPings.length
+          : null);
+
+      $("totalServers").textContent = formatNumber(totalServers);
+      $("averagePing").textContent = formatPing(averagePing);
+
       const connected = liveData?.connected === true;
+      $("connectionDot").className = `dot ${connected ? "online" : "waiting"}`;
+      $("connectionLabel").textContent = connected
+        ? "LIVE CONNECTION"
+        : "WAITING FOR BOT";
 
-      dot.className = `dot ${connected ? "online" : "waiting"}`;
-      label.textContent = connected ? "LIVE CONNECTION" : "AWAITING CONNECTION";
+      if (!clusters.length) {
+        $("clusterList").innerHTML = `
+          <div class="empty">
+            <strong>No connected shards yet</strong>
+            The API has not reported any shard IDs. Once shard data arrives,
+            clusters will be created automatically with seven consecutive shard
+            IDs assigned to each cluster.
+          </div>
+        `;
+        $("toggleClusters").hidden = true;
+        $("clusterHint").textContent = "Waiting for shard information.";
+        return;
+      }
 
-      const visibleCount = showAllClusters ? clusterCount : Math.min(3, clusterCount);
-      $("clusterList").innerHTML = Array.from(
-        { length: visibleCount },
-        (_, i) => renderCluster(i, shardMap)
-      ).join("");
+      const visibleClusters = showAllClusters
+        ? clusters
+        : clusters.slice(0, 3);
 
-      $("toggleClusters").style.display = clusterCount > 3 ? "inline-block" : "none";
+      $("clusterList").innerHTML = visibleClusters
+        .map(renderCluster)
+        .join("");
+
+      $("toggleClusters").hidden = clusters.length <= 3;
       $("toggleClusters").textContent = showAllClusters
         ? "Show Fewer Clusters ↑"
         : "Show All Clusters ↓";
 
       $("clusterHint").textContent = showAllClusters
-        ? `Showing all ${clusterCount} clusters and their assigned shards.`
-        : `Showing ${visibleCount} of ${clusterCount} clusters. Expand to inspect every cluster.`;
+        ? `Showing all ${clusters.length} reported clusters and their reported shards.`
+        : `Showing ${visibleClusters.length} of ${clusters.length} reported clusters.`;
     }
 
     async function fetchStatus() {
@@ -748,45 +837,26 @@
         const response = await fetch("/api/status", {
           method: "GET",
           cache: "no-store",
-          headers: { "Accept": "application/json" }
+          headers: { Accept: "application/json" }
         });
 
-        if (!response.ok) throw new Error(`Status API returned ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Status API returned ${response.status}`);
+        }
 
         const data = await response.json();
         liveData = data;
-
-        const configuredCount = Number(
-          data.totalShards ??
-          data.stats?.totalShards ??
-          data.shardCount
-        );
-
-        if (Number.isInteger(configuredCount) && configuredCount > 0) {
-          actualShardCount = configuredCount;
-        } else if (Array.isArray(data.shards) && data.shards.length > 0) {
-          const maxId = Math.max(...data.shards.map(s => Number(s.id ?? s.shardId ?? -1)));
-          if (maxId >= 0) actualShardCount = Math.max(actualShardCount, maxId + 1);
-        }
-
         render();
       } catch (error) {
-        // The planned layout remains available when the bot API is not connected.
-        $("connectionLabel").textContent = "API UNAVAILABLE";
         $("connectionDot").className = "dot offline";
-        console.warn("Dravix status API is not available:", error.message);
+        $("connectionLabel").textContent = "API UNAVAILABLE";
+        console.warn("Dravix status API unavailable:", error.message);
       }
     }
 
     $("toggleClusters").addEventListener("click", () => {
       showAllClusters = !showAllClusters;
       render();
-      if (showAllClusters) {
-        $("clusterList").lastElementChild?.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest"
-        });
-      }
     });
 
     $("lookupForm").addEventListener("submit", (event) => {
@@ -796,25 +866,44 @@
       const result = $("lookupResult");
 
       if (!/^\d{17,20}$/.test(rawId)) {
-        result.innerHTML = '<span style="color:var(--gold-light)">Enter a valid Discord server ID containing 17–20 digits.</span>';
+        result.innerHTML =
+          '<span class="gold">Enter a valid 17–20 digit Discord server ID.</span>';
+        result.classList.add("visible");
+        return;
+      }
+
+      // A real shard calculation requires the bot's configured total shard count.
+      const configuredShardCount = numberOrNull(
+        liveData?.totalShards ??
+        liveData?.stats?.totalShards ??
+        liveData?.shardCount
+      );
+
+      if (!configuredShardCount || configuredShardCount < 1) {
+        result.textContent =
+          "The bot has not reported its configured total shard count yet. The shard lookup will work once that configuration is provided by the API.";
         result.classList.add("visible");
         return;
       }
 
       try {
         const guildId = BigInt(rawId);
-        const shardId = Number((guildId >> 22n) % BigInt(actualShardCount));
+        const shardId = Number(
+          (guildId >> 22n) % BigInt(configuredShardCount)
+        );
         const clusterId = Math.floor(shardId / SHARDS_PER_CLUSTER);
         const firstShard = clusterId * SHARDS_PER_CLUSTER;
-        const lastShard = Math.min(firstShard + SHARDS_PER_CLUSTER - 1, actualShardCount - 1);
+        const lastShard = firstShard + SHARDS_PER_CLUSTER - 1;
+        const shardMap = getShardMap();
+        const reported = shardMap.has(shardId);
 
         result.innerHTML = `
           <div class="eyebrow">Lookup Result</div>
           <div><strong>Server ID:</strong> ${escapeHtml(rawId)}</div>
-          <div><strong>Shard ID:</strong> <span class="gold-text">${shardId}</span></div>
-          <div><strong>Cluster:</strong> <span class="gold-text">Cluster ${clusterId + 1}</span></div>
-          <div><strong>Cluster controls:</strong> Shards ${firstShard}–${lastShard}</div>
-          <div class="section-description">This result uses the planned shard count and 7-consecutive-shards-per-cluster mapping.</div>
+          <div><strong>Shard ID:</strong> <span class="gold">${shardId}</span></div>
+          <div><strong>Cluster:</strong> <span class="gold">Cluster ${clusterId + 1}</span></div>
+          <div><strong>Cluster assignment:</strong> Shards ${firstShard}–${lastShard}</div>
+          <div><strong>Shard data:</strong> ${reported ? "Reported by API" : "Not currently reported"}</div>
         `;
       } catch {
         result.textContent = "Unable to calculate the shard for that ID.";
