@@ -2,294 +2,830 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0b0b0c">
-<title>Dravix — Shard Status</title>
-<style>
-:root {
-  color-scheme: dark;
-  --bg: #0b0b0c;
-  --panel: #141415;
-  --panel2: #19191b;
-  --border: #2c2c30;
-  --text: #eeeeef;
-  --muted: #929297;
-  --gray: #bdbdc3;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: radial-gradient(ellipse at top, #202022 0, var(--bg) 420px);
-  color: var(--text);
-  font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-button, input { font: inherit; }
-.page { width: min(1080px, calc(100% - 32px)); margin: auto; padding: 34px 0 50px; }
-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 40px; }
-.brand { display: flex; align-items: center; gap: 12px; }
-.logo {
-  display: grid; place-items: center; width: 44px; height: 44px;
-  border: 1px solid #414145; border-radius: 12px;
-  background: linear-gradient(145deg,#303033,#151516);
-  font-size: 22px; font-weight: 800;
-}
-.brand-name { font-size: 16px; font-weight: 800; letter-spacing: .19em; }
-.brand-sub { color: var(--muted); font-size: 10px; letter-spacing: .15em; }
-.pill { border: 1px solid var(--border); background: var(--panel); border-radius: 30px; padding: 7px 11px; color: var(--muted); font-size: 12px; }
-.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #77777d; margin-right: 7px; }
-.eyebrow { color: var(--muted); text-transform: uppercase; letter-spacing: .16em; font-size: 11px; }
-h1 { font-size: clamp(28px,4vw,38px); letter-spacing: -.045em; line-height: 1.15; margin: 8px 0; }
-.intro { color: var(--muted); max-width: 620px; margin: 0; }
-.stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 26px 0; }
-.stat, .panel { border: 1px solid var(--border); border-radius: 13px; background: linear-gradient(145deg,#19191b,#121213); }
-.stat { padding: 17px; }
-.stat-label { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: .11em; }
-.stat-value { font-size: 27px; font-weight: 750; letter-spacing: -.04em; margin-top: 8px; }
-.stat-note { color: #6f6f76; font-size: 11px; margin-top: 2px; }
-.panel { overflow: hidden; }
-.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 17px 19px; border-bottom: 1px solid #252528; }
-.panel-title { font-weight: 700; }
-.panel-sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
-.legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 13px 19px; border-bottom: 1px solid #252528; }
-.legend span { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
-.swatch { width: 9px; height: 9px; border-radius: 3px; background: #bdbdc3; }
-.swatch.connecting { background: #77777f; }
-.swatch.offline { background: #414146; }
-.swatch.unknown { background: #222225; border: 1px solid #45454b; }
-.cluster-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 12px; padding: 14px; }
-.cluster-card { padding: 13px; border: 1px solid #303034; border-radius: 10px; background: #151516; min-width: 0; }
-.cluster-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-.cluster-name { font-weight: 650; }
-.cluster-meta { color: var(--muted); font-size: 11px; }
-.shard-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(36px,1fr)); gap: 7px; }
-.shard {
-  position: relative; aspect-ratio: 1; min-width: 0; display: grid; place-items: center;
-  border: 1px solid #45454a; border-radius: 7px; background: #343438; color: #e4e4e7;
-  font-size: 12px; font-weight: 700; transition: .15s ease; outline: none;
-}
-.shard:hover, .shard:focus-visible { transform: translateY(-2px); border-color: #aaaab1; background: #45454a; z-index: 2; }
-.shard.online { background: #bdbdc3; border-color: #d5d5da; color: #171719; }
-.shard.connecting { background: #77777f; border-color: #919198; color: white; }
-.shard.reconnecting { background: #55555b; border-color: #707077; color: white; }
-.shard.offline { background: #303034; border-color: #45454a; color: #b9b9bf; }
-.shard.unknown { background: #1e1e21; border-color: #333337; color: #aaaab0; }
-.tooltip {
-  display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-  width: max-content; max-width: 220px; padding: 8px 10px; border: 1px solid #414146;
-  border-radius: 8px; background: #222224; color: #f2f2f3; font-size: 11px; font-weight: 400;
-  box-shadow: 0 10px 24px #0008; pointer-events: none;
-}
-.shard:hover .tooltip, .shard:focus-visible .tooltip { display: block; }
-.empty { grid-column: 1/-1; text-align: center; padding: 34px 15px; }
-.empty-mark { margin: 0 auto 12px; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid #363639; border-radius: 11px; background: #202022; font-size: 18px; }
-.empty-title { font-weight: 700; }
-.empty-copy { max-width: 390px; margin: 5px auto 0; color: var(--muted); font-size: 12px; }
-.lookup { margin-top: 18px; }
-.lookup-body { padding: 18px; }
-.lookup-row { display: flex; gap: 9px; }
-input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #39393e; border-radius: 9px; outline: none; background: #0d0d0e; color: var(--text); }
-input::placeholder { color: #6c6c72; }
-input:focus { border-color: #88888f; box-shadow: 0 0 0 3px #ffffff0d; }
-button { padding: 0 17px; border: 1px solid #dedee2; border-radius: 9px; background: #d7d7dc; color: #171719; font-weight: 750; }
-button:hover { background: #fff; }
-.result { display: none; margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel2); }
-.result.show { display: block; }
-.help { color: #707077; font-size: 11px; margin-top: 9px; }
-footer { display: flex; justify-content: space-between; gap: 12px; color: #6d6d74; font-size: 11px; margin-top: 24px; }
-footer strong { color: #aaaab0; letter-spacing: .12em; }
-@media(max-width:700px) {
-  .page { width: calc(100% - 22px); padding-top: 22px; }
-  header { margin-bottom: 30px; }
-  .stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
-  .stat { padding: 14px; }
-  .stat-value { font-size: 24px; }
-  .panel-head { padding: 14px; }
-  .legend { padding: 12px 14px; gap: 10px; }
-  .cluster-list { padding: 9px; gap: 9px; }
-  .cluster-card { padding: 10px; }
-}
-@media(max-width:420px) {
-  .brand-sub { font-size: 8px; }
-  .pill { font-size: 10px; padding: 6px 8px; }
-  .lookup-row { flex-direction: column; }
-  button { min-height: 42px; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>Dravix — Shard Status</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0b0c;
+      --panel: #121213;
+      --panel-2: #19191b;
+      --border: #303033;
+      --gold: #d4af37;
+      --gold-light: #f0d777;
+      --text: #f3f3f3;
+      --muted: #929297;
+      --green: #53cf8a;
+      --red: #f16c76;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    button, input { font: inherit; }
+
+    button { cursor: pointer; }
+
+    .container {
+      width: min(1200px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,11,12,.95);
+    }
+
+    .nav {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 23px;
+      font-weight: 850;
+      letter-spacing: 2px;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 39px;
+      height: 39px;
+      border-radius: 11px;
+      background: var(--gold);
+      color: #111;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .eyebrow {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      display: inline-block;
+      border-radius: 50%;
+      background: #666;
+      flex-shrink: 0;
+    }
+
+    .dot.online { background: var(--green); }
+    .dot.offline { background: var(--red); }
+    .dot.waiting { background: var(--gold); }
+
+    main { padding: 38px 0 60px; }
+
+    .hero { margin-bottom: 27px; }
+
+    h1 {
+      margin: 8px 0 9px;
+      font-size: clamp(29px, 4vw, 43px);
+      letter-spacing: -1.5px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      max-width: 700px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 13px;
+      margin: 26px 0 35px;
+    }
+
+    .panel, .stat, .cluster {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+    }
+
+    .stat { padding: 19px; }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      margin-top: 12px;
+      font-size: 29px;
+      font-weight: 800;
+      letter-spacing: -.7px;
+    }
+
+    .stat-note {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin: 34px 0 16px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -.4px;
+    }
+
+    .section-description {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 7px 10px;
+      color: #d2d2d5;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .gold-text { color: var(--gold-light); }
+
+    .cluster-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .cluster {
+      overflow: hidden;
+    }
+
+    .cluster-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+      background: linear-gradient(105deg, #191816, #121213 70%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cluster-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .cluster-title h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .cluster-id {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .cluster-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 7px;
+    }
+
+    .cluster-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-chip {
+      padding: 8px 10px;
+      background: #19191b;
+      border: 1px solid #29292c;
+      border-radius: 7px;
+      font-size: 11px;
+      color: #b7b7bd;
+    }
+
+    .metric-chip strong {
+      color: var(--text);
+      margin-left: 4px;
+    }
+
+    .shards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 15px;
+    }
+
+    .shard {
+      min-width: 0;
+      border: 1px solid #303034;
+      background: #171719;
+      border-radius: 9px;
+      padding: 13px;
+      transition: border-color .15s, transform .15s;
+    }
+
+    .shard:hover {
+      border-color: #9b8029;
+      transform: translateY(-2px);
+    }
+
+    .shard-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .shard-name { font-weight: 800; font-size: 13px; }
+
+    .shard-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .shard-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .shard-stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .shard-stat-value {
+      font-size: 15px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .shard-footer {
+      border-top: 1px solid #2b2b2e;
+      margin-top: 13px;
+      padding-top: 9px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .lookup {
+      padding: 22px;
+    }
+
+    .lookup-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid #37373b;
+      border-radius: 8px;
+      background: #0d0d0e;
+      color: var(--text);
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    input:focus { border-color: var(--gold); }
+
+    .btn {
+      background: var(--gold);
+      color: #111;
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 11px 17px;
+      font-weight: 800;
+      font-size: 12px;
+      transition: background .15s;
+    }
+
+    .btn:hover { background: var(--gold-light); }
+
+    .btn-secondary {
+      background: #19191b;
+      color: var(--text);
+      border-color: #3a3a3d;
+    }
+
+    .btn-secondary:hover { background: #242426; }
+
+    .lookup-result {
+      display: none;
+      margin-top: 15px;
+      padding: 15px;
+      border: 1px solid #5c4b1c;
+      background: #19170f;
+      border-radius: 9px;
+      line-height: 1.8;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .lookup-result.visible { display: block; }
+
+    .bottom-action {
+      display: flex;
+      justify-content: center;
+      margin: 27px 0 12px;
+    }
+
+    .bottom-action .btn {
+      min-width: 220px;
+      padding: 14px 22px;
+      font-size: 13px;
+    }
+
+    .empty {
+      border: 1px dashed #3a3a3e;
+      background: #111112;
+      border-radius: 9px;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .footer strong { color: var(--gold); }
+
+    @media (max-width: 760px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .shards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cluster-header { align-items: flex-start; flex-direction: column; }
+      .nav { min-height: 66px; }
+      .nav-right { font-size: 10px; }
+    }
+
+    @media (max-width: 420px) {
+      .container { width: calc(100% - 22px); }
+      main { padding-top: 27px; }
+      .stat { padding: 14px; }
+      .stat-value { font-size: 24px; }
+      .lookup-form { flex-direction: column; }
+      .shards { padding: 10px; gap: 8px; }
+      .shard { padding: 10px; }
+    }
+  </style>
 </head>
 <body>
-<main class="page">
-<header>
-  <div class="brand">
-    <div class="logo">D</div>
-    <div><div class="brand-name">DRAVIX</div><div class="brand-sub">STATUS INFRASTRUCTURE</div></div>
-  </div>
-  <div class="pill"><span class="dot" id="status-dot"></span><span id="connection">Awaiting bot</span></div>
-</header>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <span>DRAVIX</span>
+      </div>
+      <div class="nav-right">
+        <span class="dot waiting" id="connectionDot"></span>
+        <span id="connectionLabel">AWAITING CONNECTION</span>
+      </div>
+    </div>
+  </header>
 
-<section>
-  <div class="eyebrow">Discord infrastructure</div>
-  <h1>Shard status</h1>
-  <p class="intro">An overview of Dravix gateway connections, cluster health, latency, and server distribution.</p>
-</section>
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">Infrastructure / Gateway</div>
+      <h1>Shard Status</h1>
+      <div class="subtitle">
+        Monitor Dravix gateway shards, cluster assignments, latency, and server distribution from one place.
+      </div>
+    </section>
 
-<section class="stats">
-  <article class="stat"><div class="stat-label">Total shards</div><div class="stat-value" id="total-shards">—</div><div class="stat-note">Gateway connections</div></article>
-  <article class="stat"><div class="stat-label">Total servers</div><div class="stat-value" id="total-servers">—</div><div class="stat-note">Across all shards</div></article>
-  <article class="stat"><div class="stat-label">Average ping</div><div class="stat-value" id="average-ping">—</div><div class="stat-note">Gateway latency</div></article>
-  <article class="stat"><div class="stat-label">Clusters</div><div class="stat-value" id="total-clusters">—</div><div class="stat-note">Runtime groups</div></article>
-</section>
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Total Shards</div>
+        <div class="stat-value" id="totalShards">128</div>
+        <div class="stat-note">Planned configuration</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Servers</div>
+        <div class="stat-value" id="totalServers">—</div>
+        <div class="stat-note">Across connected shards</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Average Ping</div>
+        <div class="stat-value" id="averagePing">—</div>
+        <div class="stat-note">Gateway latency</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Total Clusters</div>
+        <div class="stat-value" id="totalClusters">19</div>
+        <div class="stat-note">7 shards per cluster</div>
+      </div>
+    </section>
 
-<section class="panel">
-  <div class="panel-head">
-    <div><div class="panel-title">Shard monitor</div><div class="panel-sub">Connection health by cluster</div></div>
-    <div class="panel-sub" id="last-update">Waiting for data</div>
-  </div>
-  <div class="legend">
-    <span><i class="swatch"></i>Connected</span>
-    <span><i class="swatch connecting"></i>Connecting</span>
-    <span><i class="swatch offline"></i>Disconnected</span>
-    <span><i class="swatch unknown"></i>Unknown</span>
-  </div>
-  <div class="cluster-list" id="cluster-list">
-    <div class="empty"><div class="empty-mark">D</div><div class="empty-title">Waiting for Dravix to connect</div><p class="empty-copy">Your real shard connections will appear here after the bot backend is connected. No sample statistics are being shown.</p></div>
-  </div>
-</section>
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Shard Infrastructure</h2>
+          <div class="section-description">Every cluster and its assigned shard IDs.</div>
+        </div>
+        <span class="pill"><span class="dot waiting"></span><span id="shardCountLabel">128 planned shards</span></span>
+      </div>
+      <div id="clusterList" class="cluster-list"></div>
+      <div class="bottom-action">
+        <button class="btn" id="toggleClusters" type="button">Show All Clusters ↓</button>
+      </div>
+      <div class="section-description" id="clusterHint" style="text-align:center">
+        Expand to view every cluster and all of its shards.
+      </div>
+    </section>
 
-<section class="panel lookup">
-  <div class="panel-head"><div><div class="panel-title">Server ID lookup</div><div class="panel-sub">Find which shard handles a Discord server</div></div></div>
-  <div class="lookup-body">
-    <form class="lookup-row" id="lookup-form">
-      <input id="guild-id" type="text" inputmode="numeric" autocomplete="off" maxlength="25" placeholder="Enter a Discord server ID…" aria-label="Discord server ID">
-      <button type="submit">Find shard</button>
-    </form>
-    <div id="lookup-result" class="result" role="status"></div>
-    <div class="help">Shard calculation requires the bot's configured shard count.</div>
-  </div>
-</section>
-<footer><span><strong>DRAVIX</strong> · Status monitor</span><span id="footer-note">Backend not connected yet</span></footer>
-</main>
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Server Lookup</h2>
+          <div class="section-description">Find which shard and cluster would handle a Discord server ID.</div>
+        </div>
+      </div>
+      <div class="panel lookup">
+        <div class="eyebrow">Guild ID Resolver</div>
+        <form class="lookup-form" id="lookupForm">
+          <input id="guildId" inputmode="numeric" autocomplete="off" placeholder="Enter a Discord server ID" aria-label="Discord server ID">
+          <button class="btn" type="submit">Find Shard</button>
+        </form>
+        <div class="lookup-result" id="lookupResult" role="status"></div>
+      </div>
+    </section>
+  </main>
 
-<script>
-const STATUS_URL = "/api/status";
-let latestData = null;
-const $ = id => document.getElementById(id);
+  <footer class="footer">
+    <div class="container">
+      <strong>DRAVIX</strong> · Shard Infrastructure<br>
+      Live metrics will appear once the bot status API is connected.
+    </div>
+  </footer>
 
-function stateClass(shard) {
-  const state = String(shard.statusLabel ?? shard.state ?? shard.status ?? "").toLowerCase();
-  if (shard.connected === true || ["4","online","connected","ready","ok"].includes(state)) return "online";
-  if (["2","connecting","logging in","logging_in"].includes(state)) return "connecting";
-  if (["1","reconnecting","retrying"].includes(state)) return "reconnecting";
-  if (["0","3","offline","disconnected","dead"].includes(state)) return "offline";
-  return "unknown";
-}
-function stateName(shard) {
-  return ({online:"Connected",connecting:"Connecting",reconnecting:"Reconnecting",offline:"Disconnected",unknown:"Unknown"})[stateClass(shard)];
-}
-function emptyState(title, copy) {
-  const box = document.createElement("div");
-  box.className = "empty";
-  const mark = document.createElement("div"); mark.className = "empty-mark"; mark.textContent = "D";
-  const heading = document.createElement("div"); heading.className = "empty-title"; heading.textContent = title;
-  const message = document.createElement("p"); message.className = "empty-copy"; message.textContent = copy;
-  box.append(mark, heading, message);
-  return box;
-}
-function renderCluster(host, title, shards) {
-  const card = document.createElement("section"); card.className = "cluster-card";
-  const head = document.createElement("div"); head.className = "cluster-head";
-  const name = document.createElement("div"); name.className = "cluster-name"; name.textContent = title;
-  const meta = document.createElement("div"); meta.className = "cluster-meta"; meta.textContent = `${shards.length} shard${shards.length === 1 ? "" : "s"}`;
-  head.append(name, meta);
-  const grid = document.createElement("div"); grid.className = "shard-grid";
-  shards.sort((a,b) => Number(a.id ?? a.shardId ?? 0) - Number(b.id ?? b.shardId ?? 0));
-  for (const shard of shards) {
-    const id = Number(shard.id ?? shard.shardId ?? shard.shard_id);
-    const tile = document.createElement("div");
-    tile.className = `shard ${stateClass(shard)}`;
-    tile.tabIndex = 0;
-    tile.textContent = Number.isFinite(id) ? String(id) : "?";
-    const ping = Number(shard.ping ?? shard.pingMs ?? shard.latency);
-    const guilds = Number(shard.guilds ?? shard.serverCount ?? shard.servers);
-    const tip = document.createElement("span"); tip.className = "tooltip";
-    tip.textContent = `Shard ${Number.isFinite(id) ? id : "?"} · ${stateName(shard)} · Ping: ${Number.isFinite(ping) && ping >= 0 ? ping + " ms" : "—"} · Servers: ${Number.isFinite(guilds) ? guilds.toLocaleString() : "—"}`;
-    tile.appendChild(tip); grid.appendChild(tile);
-  }
-  card.append(head, grid); host.appendChild(card);
-}
-function renderShards(data) {
-  const host = $("cluster-list"); host.replaceChildren();
-  const shards = Array.isArray(data.shards) ? data.shards : [];
-  const clusters = Array.isArray(data.clusters) ? data.clusters : [];
-  if (clusters.length) {
-    clusters.forEach((cluster, index) => {
-      const members = (cluster.shards || []).map(item => typeof item === "object" ? item : shards.find(s => Number(s.id ?? s.shardId) === Number(item))).filter(Boolean);
-      renderCluster(host, cluster.name || `Cluster ${cluster.id ?? index}`, members);
-    });
-  } else if (shards.length) {
-    const grouped = new Map();
-    shards.forEach(shard => {
-      const id = String(shard.clusterId ?? shard.cluster ?? 0);
-      if (!grouped.has(id)) grouped.set(id, []);
-      grouped.get(id).push(shard);
-    });
-    [...grouped.entries()].sort((a,b) => Number(a[0])-Number(b[0])).forEach(([id, members]) => renderCluster(host, `Cluster ${id}`, members));
-  } else {
-    host.appendChild(emptyState("Waiting for Dravix to connect", data.message || "Your real shard connections will appear here after the bot backend is connected."));
-  }
-}
-function update(data) {
-  latestData = data;
-  const stats = data.stats || {};
-  const shards = Array.isArray(data.shards) ? data.shards : [];
-  const clusters = Array.isArray(data.clusters) ? data.clusters : [];
-  const pings = shards.map(s => Number(s.ping ?? s.pingMs ?? s.latency)).filter(n => Number.isFinite(n) && n >= 0);
-  const avg = stats.averagePing ?? (pings.length ? pings.reduce((a,b)=>a+b,0)/pings.length : null);
-  $("total-shards").textContent = stats.totalShards ?? data.totalShards ?? (shards.length || "—");
-  $("total-servers").textContent = stats.totalServers ?? data.totalServers ?? "—";
-  $("average-ping").textContent = avg == null ? "—" : Number(avg).toFixed(1) + " ms";
-  $("total-clusters").textContent = stats.totalClusters ?? data.totalClusters ?? (clusters.length || (shards.length ? new Set(shards.map(s=>s.clusterId ?? s.cluster ?? 0)).size : "—"));
-  const online = data.connected === true || ["online","connected"].includes(data.status);
-  $("connection").textContent = online ? "Operational" : "Awaiting bot";
-  $("status-dot").style.background = online ? "#c7c7cc" : "#77777d";
-  $("last-update").textContent = data.updatedAt ? "Updated " + new Date(data.updatedAt).toLocaleTimeString() : "Checked " + new Date().toLocaleTimeString();
-  $("footer-note").textContent = online ? "Status data received" : (data.message || "Backend reachable · bot not connected");
-  renderShards(data);
-}
-$("lookup-form").addEventListener("submit", event => {
-  event.preventDefault();
-  const result = $("lookup-result");
-  result.classList.add("show");
-  const id = $("guild-id").value.trim();
-  if (!/^\d{15,25}$/.test(id)) { result.textContent = "Enter a valid numeric Discord server ID."; return; }
-  const count = Number(latestData?.stats?.totalShards ?? latestData?.totalShards);
-  if (!Number.isInteger(count) || count < 1) { result.textContent = "The bot is not connected yet, so its configured shard count is unavailable."; return; }
-  const shardId = Number((BigInt(id) >> 22n) % BigInt(count));
-  const shards = latestData?.shards || [];
-  const shard = shards.find(s => Number(s.id ?? s.shardId ?? s.shard_id) === shardId);
-  const cluster = shard?.clusterId ?? shard?.cluster;
-  result.textContent = `Shard ${shardId}` + (cluster == null ? "" : ` · Cluster ${cluster}`);
-});
-$("guild-id").addEventListener("input", () => $("lookup-result").classList.remove("show"));
+  <script>
+    // Planned configuration. Each cluster owns 7 consecutive shard IDs.
+    const PLANNED_SHARDS = 128;
+    const SHARDS_PER_CLUSTER = 7;
+    const REFRESH_INTERVAL = 5000;
 
-async function refreshStatus() {
-  try {
-    const response = await fetch(STATUS_URL, {cache:"no-store",headers:{"Accept":"application/json"}});
-    if (!response.ok) throw new Error(`API returned ${response.status}`);
-    update(await response.json());
-  } catch (error) {
-    $("connection").textContent = "Backend unavailable";
-    $("status-dot").style.background = "#55555b";
-    $("last-update").textContent = "Unable to reach status API";
-    $("footer-note").textContent = "Check the /api/status deployment";
-    if (!latestData) {
-      $("cluster-list").replaceChildren(emptyState("Status API unavailable","The design is ready, but Vercel must deploy /api/status before the page can receive status data."));
+    let actualShardCount = PLANNED_SHARDS;
+    let liveData = null;
+    let showAllClusters = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
     }
-    console.error("Dravix status refresh failed:", error);
-  }
-}
-refreshStatus();
-setInterval(refreshStatus, 5000);
-</script>
+
+    function formatNumber(value) {
+      return Number.isFinite(Number(value))
+        ? Number(value).toLocaleString()
+        : "—";
+    }
+
+    function formatPing(value) {
+      return Number.isFinite(Number(value)) && value !== null
+        ? `${Math.round(Number(value))} ms`
+        : "—";
+    }
+
+    function shardStatus(shard) {
+      const status = String(shard?.status ?? "").toLowerCase();
+      if (shard?.online === true || status === "online" || status === "ready" || status === "connected" || status === "1") {
+        return { label: "Online", cls: "online" };
+      }
+      if (shard?.online === false || status === "offline" || status === "disconnected" || status === "0") {
+        return { label: "Offline", cls: "offline" };
+      }
+      return { label: "Waiting", cls: "waiting" };
+    }
+
+    function getShardMap() {
+      const map = new Map();
+      const rawShards = liveData?.shards;
+
+      if (Array.isArray(rawShards)) {
+        rawShards.forEach((shard) => {
+          const id = Number(shard.id ?? shard.shardId ?? shard.shard_id);
+          if (Number.isInteger(id) && id >= 0) map.set(id, shard);
+        });
+      } else if (rawShards && typeof rawShards === "object") {
+        Object.entries(rawShards).forEach(([key, shard]) => {
+          const id = Number(shard?.id ?? shard?.shardId ?? key);
+          if (Number.isInteger(id) && id >= 0) map.set(id, shard);
+        });
+      }
+
+      return map;
+    }
+
+    function getClusterCount() {
+      return Math.ceil(actualShardCount / SHARDS_PER_CLUSTER);
+    }
+
+    function getClusterShardIds(clusterId) {
+      const start = clusterId * SHARDS_PER_CLUSTER;
+      const end = Math.min(start + SHARDS_PER_CLUSTER, actualShardCount);
+      const ids = [];
+      for (let id = start; id < end; id++) ids.push(id);
+      return ids;
+    }
+
+    function clusterData(clusterId, ids, shardMap) {
+      const supplied = Array.isArray(liveData?.clusters)
+        ? liveData.clusters.find(c => Number(c.id ?? c.clusterId) === clusterId)
+        : null;
+
+      const shards = ids.map(id => shardMap.get(id)).filter(Boolean);
+      const knownGuilds = shards
+        .map(s => Number(s.servers ?? s.guilds ?? s.serverCount ?? s.guild_count))
+        .filter(Number.isFinite);
+
+      const knownPings = shards
+        .map(s => Number(s.ping ?? s.latency ?? s.latencyMs))
+        .filter(n => Number.isFinite(n) && n >= 0);
+
+      const serverTotal = knownGuilds.length
+        ? knownGuilds.reduce((sum, n) => sum + n, 0)
+        : null;
+
+      const averagePing = knownPings.length
+        ? knownPings.reduce((sum, n) => sum + n, 0) / knownPings.length
+        : null;
+
+      const onlineCount = shards.filter(s => shardStatus(s).cls === "online").length;
+
+      return {
+        serverTotal: supplied?.servers ?? supplied?.totalServers ?? serverTotal,
+        averagePing: supplied?.averagePing ?? averagePing,
+        onlineCount: supplied?.onlineShards ?? onlineCount,
+        knownCount: shards.length
+      };
+    }
+
+    function renderShard(id, shardMap, clusterId) {
+      const shard = shardMap.get(id);
+      const status = shardStatus(shard);
+      const ping = shard?.ping ?? shard?.latency ?? shard?.latencyMs;
+      const servers = shard?.servers ?? shard?.guilds ?? shard?.serverCount ?? shard?.guild_count;
+
+      return `
+        <article class="shard">
+          <div class="shard-top">
+            <span class="shard-name">Shard ${id}</span>
+            <span class="shard-status"><span class="dot ${status.cls}"></span>${status.label}</span>
+          </div>
+          <div class="shard-stats">
+            <div>
+              <div class="shard-stat-label">Ping</div>
+              <div class="shard-stat-value">${shard ? escapeHtml(formatPing(ping)) : "—"}</div>
+            </div>
+            <div>
+              <div class="shard-stat-label">Servers</div>
+              <div class="shard-stat-value">${shard ? escapeHtml(formatNumber(servers)) : "—"}</div>
+            </div>
+          </div>
+          <div class="shard-footer">Cluster ${clusterId} · Shard ID ${id}</div>
+        </article>
+      `;
+    }
+
+    function renderCluster(clusterId, shardMap) {
+      const ids = getClusterShardIds(clusterId);
+      const info = clusterData(clusterId, ids, shardMap);
+      const online = info.onlineCount;
+      const statusClass = online === ids.length && ids.length > 0
+        ? "online"
+        : (online > 0 ? "waiting" : "waiting");
+      const statusLabel = online > 0 ? `${online}/${ids.length} online` : "Awaiting connection";
+
+      return `
+        <article class="cluster">
+          <div class="cluster-header">
+            <div>
+              <div class="cluster-title">
+                <span class="cluster-id">CLUSTER ${String(clusterId + 1).padStart(2, "0")}</span>
+                <h3>Cluster ${clusterId + 1}</h3>
+                <span class="pill">${ids.length} shard${ids.length === 1 ? "" : "s"}</span>
+              </div>
+              <div class="cluster-subtitle">
+                Controls shard IDs: <span class="gold-text">${ids.length ? ids[0] : "—"}${ids.length > 1 ? `–${ids[ids.length - 1]}` : ""}</span>
+                · Cluster ID ${clusterId}
+              </div>
+            </div>
+            <span class="pill"><span class="dot ${statusClass}"></span>${statusLabel}</span>
+          </div>
+
+          <div class="cluster-metrics">
+            <span class="metric-chip">Controlled shards<strong>${ids.length}</strong></span>
+            <span class="metric-chip">Online<strong>${online}</strong></span>
+            <span class="metric-chip">Servers<strong>${info.serverTotal == null ? "—" : escapeHtml(formatNumber(info.serverTotal))}</strong></span>
+            <span class="metric-chip">Average ping<strong>${info.averagePing == null ? "—" : escapeHtml(formatPing(info.averagePing))}</strong></span>
+          </div>
+
+          <div class="shards">
+            ${ids.map(id => renderShard(id, shardMap, clusterId)).join("")}
+          </div>
+        </article>
+      `;
+    }
+
+    function render() {
+      const shardMap = getShardMap();
+      const clusterCount = getClusterCount();
+
+      $("totalShards").textContent = formatNumber(actualShardCount);
+      $("totalClusters").textContent = formatNumber(clusterCount);
+
+      const allShards = Array.from(shardMap.values());
+      const guildValues = allShards
+        .map(s => Number(s.servers ?? s.guilds ?? s.serverCount ?? s.guild_count))
+        .filter(Number.isFinite);
+      const pingValues = allShards
+        .map(s => Number(s.ping ?? s.latency ?? s.latencyMs))
+        .filter(n => Number.isFinite(n) && n >= 0);
+
+      const totalServers = liveData?.stats?.totalServers ??
+        (guildValues.length ? guildValues.reduce((a, b) => a + b, 0) : null);
+      const avgPing = liveData?.stats?.averagePing ??
+        (pingValues.length ? pingValues.reduce((a, b) => a + b, 0) / pingValues.length : null);
+
+      $("totalServers").textContent = totalServers == null ? "—" : formatNumber(totalServers);
+      $("averagePing").textContent = avgPing == null ? "—" : formatPing(avgPing);
+      $("shardCountLabel").textContent = `${actualShardCount} configured shards`;
+
+      const dot = $("connectionDot");
+      const label = $("connectionLabel");
+      const connected = liveData?.connected === true;
+
+      dot.className = `dot ${connected ? "online" : "waiting"}`;
+      label.textContent = connected ? "LIVE CONNECTION" : "AWAITING CONNECTION";
+
+      const visibleCount = showAllClusters ? clusterCount : Math.min(3, clusterCount);
+      $("clusterList").innerHTML = Array.from(
+        { length: visibleCount },
+        (_, i) => renderCluster(i, shardMap)
+      ).join("");
+
+      $("toggleClusters").style.display = clusterCount > 3 ? "inline-block" : "none";
+      $("toggleClusters").textContent = showAllClusters
+        ? "Show Fewer Clusters ↑"
+        : "Show All Clusters ↓";
+
+      $("clusterHint").textContent = showAllClusters
+        ? `Showing all ${clusterCount} clusters and their assigned shards.`
+        : `Showing ${visibleCount} of ${clusterCount} clusters. Expand to inspect every cluster.`;
+    }
+
+    async function fetchStatus() {
+      try {
+        const response = await fetch("/api/status", {
+          method: "GET",
+          cache: "no-store",
+          headers: { "Accept": "application/json" }
+        });
+
+        if (!response.ok) throw new Error(`Status API returned ${response.status}`);
+
+        const data = await response.json();
+        liveData = data;
+
+        const configuredCount = Number(
+          data.totalShards ??
+          data.stats?.totalShards ??
+          data.shardCount
+        );
+
+        if (Number.isInteger(configuredCount) && configuredCount > 0) {
+          actualShardCount = configuredCount;
+        } else if (Array.isArray(data.shards) && data.shards.length > 0) {
+          const maxId = Math.max(...data.shards.map(s => Number(s.id ?? s.shardId ?? -1)));
+          if (maxId >= 0) actualShardCount = Math.max(actualShardCount, maxId + 1);
+        }
+
+        render();
+      } catch (error) {
+        // The planned layout remains available when the bot API is not connected.
+        $("connectionLabel").textContent = "API UNAVAILABLE";
+        $("connectionDot").className = "dot offline";
+        console.warn("Dravix status API is not available:", error.message);
+      }
+    }
+
+    $("toggleClusters").addEventListener("click", () => {
+      showAllClusters = !showAllClusters;
+      render();
+      if (showAllClusters) {
+        $("clusterList").lastElementChild?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest"
+        });
+      }
+    });
+
+    $("lookupForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const rawId = $("guildId").value.trim();
+      const result = $("lookupResult");
+
+      if (!/^\d{17,20}$/.test(rawId)) {
+        result.innerHTML = '<span style="color:var(--gold-light)">Enter a valid Discord server ID containing 17–20 digits.</span>';
+        result.classList.add("visible");
+        return;
+      }
+
+      try {
+        const guildId = BigInt(rawId);
+        const shardId = Number((guildId >> 22n) % BigInt(actualShardCount));
+        const clusterId = Math.floor(shardId / SHARDS_PER_CLUSTER);
+        const firstShard = clusterId * SHARDS_PER_CLUSTER;
+        const lastShard = Math.min(firstShard + SHARDS_PER_CLUSTER - 1, actualShardCount - 1);
+
+        result.innerHTML = `
+          <div class="eyebrow">Lookup Result</div>
+          <div><strong>Server ID:</strong> ${escapeHtml(rawId)}</div>
+          <div><strong>Shard ID:</strong> <span class="gold-text">${shardId}</span></div>
+          <div><strong>Cluster:</strong> <span class="gold-text">Cluster ${clusterId + 1}</span></div>
+          <div><strong>Cluster controls:</strong> Shards ${firstShard}–${lastShard}</div>
+          <div class="section-description">This result uses the planned shard count and 7-consecutive-shards-per-cluster mapping.</div>
+        `;
+      } catch {
+        result.textContent = "Unable to calculate the shard for that ID.";
+      }
+
+      result.classList.add("visible");
+    });
+
+    render();
+    fetchStatus();
+    setInterval(fetchStatus, REFRESH_INTERVAL);
+  </script>
 </body>
 </html>
