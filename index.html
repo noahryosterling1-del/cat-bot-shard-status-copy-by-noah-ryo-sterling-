@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=3.0" name="viewport" />
+    <title>Cat Bot Status</title>
+    <style>
+        .data-box {
+            box-sizing: border-box;
+            width: 48px;
+            height: 48px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            font-size: 22px;
+            position: relative;
+            justify-self: center;
+            text-align: center;
+            color: white;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background-color: #00000080;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 10;
+            top: 115%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .data-box:hover .tooltip {
+            display: block;
+        }
+        .data-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 290px));
+            justify-content: center;
+            gap: 12px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        .cluster-card {
+            box-sizing: border-box;
+            min-width: 0;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .cluster-header {
+            margin: 0 0 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .shard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 48px);
+            justify-content: center;
+            gap: 6px;
+        }
+        .data-box.change {
+            animation: changeAnimation 0.2s forwards;
+        }
+        @keyframes changeAnimation {
+            0% {
+                filter: brightness(0.7);
+            }
+            100% {
+                filter: brightness(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <center>
+        <h1>cat bot shards</h1>
+        <p style="max-width: 500px;">
+            each shard is a connection which handles around 1,000 servers.<br>
+            green shards dont 100% mean the bot doesn't have any issues, just that the connection is fine.
+        </p>
+
+        <b>check out <a href="https://status.catbot.link">status.catbot.link</a> for user-friendly status overview</b>
+        <br><br>
+
+        <input type="text" id="guild-id-input" placeholder="enter server id..." />
+        <input type="number" id="num-shards-input" min="1" style="display: none;"/>
+        <div id="shard-result"></div>
+        <br>
+
+        <div style="display:inline">
+            <span style="color:green">ok</span>
+            <span style="color:black">disconnected</span>
+            <span style="color:orange">logging in</span>
+            <span style="color:blue">reconnecting</span>
+            <span style="color:red">dead</span>
+            <span style="color:gray">unknown</span>
+        </div>
+        <br><br>
+
+        <div id="last-update"></div>
+        <br>
+        <div id="data-container" class="data-container">loading... if this takes more than a few seconds, refresh the page</div>
+        <br>
+
+        <div id="stats">
+            <div id="average-ping"></div>
+            <div id="total-guilds"></div>
+        </div>
+    </center>
+<script>
+function computeShardId() {
+    const guildStr = document.getElementById('guild-id-input').value.trim();
+    const shardsStr = document.getElementById('num-shards-input').value.trim();
+    let out = '';
+
+    if (guildStr && shardsStr) {
+        try {
+            const guildId = BigInt(guildStr);
+            const numShards = BigInt(shardsStr);
+            const shardId = (guildId >> 22n) % numShards;
+            const clusterId = shardId / (numShards / 16n);
+            out = `Shard: ${shardId.toString()}, Cluster: ${clusterId.toString()}`;
+        } catch {
+            out = 'Invalid input.';
+        }
+    }
+
+    document.getElementById('shard-result').textContent = out;
+};
+
+document.getElementById('guild-id-input').addEventListener('blur', computeShardId);
+
+const socketUrl = 'wss://shards.minkos.lol/';
+let socket;
+let reconnectInterval = 1000;
+
+function connect() {
+    socket = new WebSocket(socketUrl);
+
+    socket.onopen = function() {
+        console.log('WebSocket Client Connected');
+        socket.send('Hello, Server!');
+    };
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const container = document.getElementById('data-container');
+        container.innerHTML = '';
+        console.log('new data');
+
+        let totalPing = 0;
+        let totalGuilds = 0;
+        let count = 0;
+
+        const TOTAL_CLUSTERS = 16;
+        const totalShards = Object.keys(data).length;
+        const shardsPerCluster = totalShards / TOTAL_CLUSTERS;
+        const clusterCards = new Map();
+
+        let betaCluster = -1;
+        if (shardsPerCluster > 0) {
+            const betaShard = Number((966586000417619998n >> 22n) % BigInt(totalShards));
+            betaCluster = Math.floor(betaShard / shardsPerCluster);
+        }
+
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const entry = data[key];
+
+                const shardNum = Number(key);
+                const clusterNum = shardsPerCluster > 0 ? Math.floor(shardNum / shardsPerCluster) : 0;
+                let shardGrid = clusterCards.get(clusterNum);
+                if (!shardGrid) {
+                    const card = document.createElement('section');
+                    card.className = 'cluster-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'cluster-header';
+                    header.textContent = `Cluster ${clusterNum}` + (clusterNum === betaCluster ? ' (experimental)' : '');
+                    card.appendChild(header);
+
+                    shardGrid = document.createElement('div');
+                    shardGrid.className = 'shard-grid';
+                    card.appendChild(shardGrid);
+                    container.appendChild(card);
+                    clusterCards.set(clusterNum, shardGrid);
+                }
+
+                const box = document.createElement('div');
+                box.className = 'data-box';
+                box.textContent = key;
+
+                totalPing += entry.ping;
+                totalGuilds += entry.guilds;
+                count++;
+
+                switch (entry.status) {
+                    case 4:
+                        box.style.backgroundColor = 'green';
+                        break;
+                    case 3:
+                        box.style.backgroundColor = 'black';
+                        break;
+                    case 2:
+                        box.style.backgroundColor = 'orange';
+                        break;
+                    case 1:
+                        box.style.backgroundColor = 'blue';
+                        break;
+                    case 0:
+                        box.style.backgroundColor = 'red';
+                        break;
+                    default:
+                        box.style.backgroundColor = 'gray';
+                }
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = `${entry.ping}ms, ${entry.guilds} servers`;
+                box.appendChild(tooltip);
+
+                if (entry.change) {
+                    box.classList.add('change');
+                }
+
+                shardGrid.appendChild(box);
+            }
+        }
+        const averagePing = count > 0 ? (totalPing / count).toFixed(2) : 'N/A';
+        const totalGuildsText = totalGuilds > 0 ? totalGuilds : 'N/A';
+        document.getElementById('average-ping').textContent = `Average Ping: ${averagePing}ms`;
+        document.getElementById('total-guilds').textContent = `Total Servers: ${totalGuildsText}`;
+
+        if (count > 0) {
+            document.getElementById('num-shards-input').value = count;
+        }
+
+        const lastUpdate = document.getElementById('last-update');
+        const currentTime = new Date().toLocaleTimeString();
+        lastUpdate.textContent = `Last Update: ${currentTime}`;
+    };
+
+    socket.onclose = function() {
+        console.log('WebSocket Client Disconnected. Attempting to reconnect...');
+        setTimeout(connect, reconnectInterval);
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket Error: ', error);
+    };
+}
+connect();
+</script>
+</body>
+
+</html>
