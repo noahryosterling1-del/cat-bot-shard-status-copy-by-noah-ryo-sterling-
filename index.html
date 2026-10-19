@@ -3,7 +3,7 @@
 
 <head>
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=3.0" name="viewport" />
-    <title>Cat Bot Status</title>
+    <title>Dravix Bot Status</title>
     <style>
         .data-box {
             box-sizing: border-box;
@@ -78,14 +78,12 @@
 
 <body>
     <center>
-        <h1>cat bot shards</h1>
+        <h1>Dravix Bot Shards</h1>
         <p style="max-width: 500px;">
             each shard is a connection which handles around 1,000 servers.<br>
             green shards dont 100% mean the bot doesn't have any issues, just that the connection is fine.
         </p>
 
-        <b>check out <a href="https://status.catbot.link">status.catbot.link</a> for user-friendly status overview</b>
-        <br><br>
 
         <input type="text" id="guild-id-input" placeholder="enter server id..." />
         <input type="number" id="num-shards-input" min="1" style="display: none;"/>
@@ -135,7 +133,7 @@ function computeShardId() {
 
 document.getElementById('guild-id-input').addEventListener('blur', computeShardId);
 
-const socketUrl = 'wss://shards.minkos.lol/';
+const socketUrl = 'wss://project-7h10q.vercel.app/';
 let socket;
 let reconnectInterval = 1000;
 
@@ -164,7 +162,7 @@ function connect() {
 
         let betaCluster = -1;
         if (shardsPerCluster > 0) {
-            const betaShard = Number((966586000417619998n >> 22n) % BigInt(totalShards));
+            const betaShard = Number((1561640820656971930n >> 22n) % BigInt(totalShards));
             betaCluster = Math.floor(betaShard / shardsPerCluster);
         }
 
