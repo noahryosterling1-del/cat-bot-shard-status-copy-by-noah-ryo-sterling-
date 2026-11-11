@@ -446,7 +446,7 @@
     <div class="container nav">
       <div class="brand">
         <div class="brand-mark">D</div>
-        <span>DRAVIX</span>
+        <span>kiru</span>
       </div>
       <div class="nav-right">
         <span class="dot waiting" id="connectionDot"></span>
@@ -506,7 +506,7 @@
       <div id="clusterList" class="cluster-list">
         <div class="empty">
           <strong>No connected shards yet</strong>
-          Your cluster list will appear here when the Dravix status API reports shards.
+          Your cluster list will appear here when the kiru status API reports shards.
           No placeholder shards or fake live statistics are displayed.
         </div>
       </div>
@@ -850,7 +850,7 @@
       } catch (error) {
         $("connectionDot").className = "dot offline";
         $("connectionLabel").textContent = "API UNAVAILABLE";
-        console.warn("Dravix status API unavailable:", error.message);
+        console.warn("kiru status API unavailable:", error.message);
       }
     }
 
