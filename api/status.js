@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
         return res.status(200).json(
             latestReport || {
-                bot: 'Dravix',
+                bot: 'KIRU',
                 status: 'awaiting_connection',
                 connected: false,
                 shards: [],
